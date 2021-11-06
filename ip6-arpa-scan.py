@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from dns import message, query, exception
 import sys
 
@@ -15,13 +14,17 @@ def tryquery(q, server):
 			pass
 
 def drilldown(base, server, limit, depth=0):
+	print("base:", base)
+	print("server:", server)
+	print("limit:", limit)
+
 	global queries, l, progress, progressperc
 	if depth == len(progress):
 		progressperc = 0 
 		for i in range(len(progress)):
 			progressperc = progressperc + (progress[i] / (16.0**(i+1)))*100
 
-	print >> sys.stderr, '\r%*s, %s queries done, %s found, %.2f%% done' % (limit, base, queries, len(l), progressperc),
+	print('\r%*s, %s queries done, %s found, %.2f %% done' % (int(limit), base, queries, len(l), progressperc))
 
 	q = message.make_query(base, 'PTR')
 	r = tryquery(q, server)
@@ -31,7 +34,7 @@ def drilldown(base, server, limit, depth=0):
 		if len(base) == limit:
 			l.append(base)
 		if len(base) < limit:
-	 		for c in '0123456789abcdef':
+			for c in '0123456789abcdef':
 				if depth < len(progress):
 					progress[depth]=int(c, 16)
 				#print "progress[%s]=%s" % (depth, progress[depth])
@@ -44,20 +47,20 @@ if len(sys.argv) == 4:
 else:
 	limit = 32*2+len('ip6.arpa.')
 
-print 'base %s server %s limit %s' % (base, server, limit)
+print ('base %s server %s limit %s' % (base, server, limit))
 
 if base.endswith('ip6.arpa'):
 	base = base + '.'
 
 if not base.endswith('ip6.arpa.'):
-	print 'please pass an ip6.arpa name'
+	print ('please pass an ip6.arpa name')
 	sys.exit(1)
 
 try:
 	drilldown(base, server, limit)
 except KeyboardInterrupt:
-	print >> sys.stderr, '\naborted, partial results follow'
+	print('\naborted, partial results follow')
 
-print >> sys.stderr, '\nnames found: %s' % len(l)
-print >> sys.stderr, 'queries done: %s' % queries
-print '\n'.join(l)
+print('\nnames found: %s' % len(l))
+print('queries done: %s' % queries)
+print ('\n'.join(l))
