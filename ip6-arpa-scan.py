@@ -1,10 +1,9 @@
 from dns import message, query, exception
 import sys
 
-queries=0
-l=[]
-progress=[0]*3
-progressperc=0
+queries = 0
+l = []
+progress = [0]*30
 
 def tryquery(q, server):
 	while 1:
@@ -14,22 +13,12 @@ def tryquery(q, server):
 			pass
 
 def drilldown(base, server, limit, depth=0):
-	print("base:", base)
-	print("server:", server)
-	print("limit:", limit)
-
-	global queries, l, progress, progressperc
-	if depth == len(progress):
-		progressperc = 0 
-		for i in range(len(progress)):
-			progressperc = progressperc + (progress[i] / (16.0**(i+1)))*100
-
-	print('\r%*s, %s queries done, %s found, %.2f %% done' % (int(limit), base, queries, len(l), progressperc))
+	global queries, l, progress
 
 	q = message.make_query(base, 'PTR')
 	r = tryquery(q, server)
 	queries = queries + 1
-	# print '%s: %s' % (base, r.rcode())
+
 	if r.rcode() == 0:
 		if len(base) == limit:
 			l.append(base)
@@ -37,30 +26,28 @@ def drilldown(base, server, limit, depth=0):
 			for c in '0123456789abcdef':
 				if depth < len(progress):
 					progress[depth]=int(c, 16)
-				#print "progress[%s]=%s" % (depth, progress[depth])
+				print ("progress[%s]=%s" % (depth, progress[depth]))
 				drilldown(c+'.'+base, server, limit, depth+1)
-			
+				
+	print('\r%*s, %s queries done, %s found' % (int(limit), base, queries, len(l)))
+		
+if __name__ == "__main__":
+	(base, server) = sys.argv[1:3]
+	if len(sys.argv) == 4:
+		limit = int(sys.argv[3])//4*2+len('ip6.arpa.')
+	else:
+		limit = 32*2+len('ip6.arpa.')
 
-(base, server) = sys.argv[1:3]
-if len(sys.argv) == 4:
-	limit = int(sys.argv[3])/4*2+len('ip6.arpa.')
-else:
-	limit = 32*2+len('ip6.arpa.')
+	print ('base %s server %s limit %s' % (base, server, limit))
 
-print ('base %s server %s limit %s' % (base, server, limit))
+	if base.endswith('ip6.arpa'):
+		base = base + '.'
 
-if base.endswith('ip6.arpa'):
-	base = base + '.'
+	if not base.endswith('ip6.arpa.'):
+		print ('please pass an ip6.arpa name')
+		sys.exit(1)
 
-if not base.endswith('ip6.arpa.'):
-	print ('please pass an ip6.arpa name')
-	sys.exit(1)
-
-try:
-	drilldown(base, server, limit)
-except KeyboardInterrupt:
-	print('\naborted, partial results follow')
-
-print('\nnames found: %s' % len(l))
-print('queries done: %s' % queries)
-print ('\n'.join(l))
+	try:
+		drilldown(base, server, limit)
+	except KeyboardInterrupt:
+		print('\naborted, partial results follow')
