@@ -3,26 +3,41 @@ import sys
 
 queries = 0
 l = []
+MAX_FOUND = 1
+
+def reverse_ipv6(ip):
+    hex4_blocks = ip.split(':')
+    hex4_blocks = list(filter(lambda i: i!='', hex4_blocks))
+
+    for i, h in enumerate(hex4_blocks):
+        if len(h) < 4:
+            hex4_blocks[i] = '0'*(4-len(h)) + h
+
+    reverse = list(''.join(hex4_blocks))[::-1]
+    result = '.'.join(reverse) + ".ip6.arpa."
+    result = result.lower()
+
+    return result
 
 def tryquery(q, server):
-	while 1:
-		try:
-			return query.udp(q, server, timeout=2)
-		except exception.Timeout:
-			pass
+	try:
+		return query.udp(q, server, timeout=2)
+	except exception.Timeout:
+		pass
 
 def drilldown(base, server, limit, depth=0):
 	assert base.endswith('ip6.arpa.')
 	global queries, l
-	print("depth:", depth)
-	if len(l) >= 10:
-		queries = 0
-		l = []
+
+	if len(l) >= MAX_FOUND:
 		return True
 
 	q = message.make_query(base, 'PTR')
 	r = tryquery(q, server)
-	print("query done!")
+
+	if r is None:
+		return False
+
 	queries = queries + 1
 
 	if r.rcode() == 0: # NOERROR, this means longer addresses exist, keep drilling down!
@@ -32,7 +47,7 @@ def drilldown(base, server, limit, depth=0):
 			for c in '0123456789abcdef': 
 				drilldown(c+'.'+base, server, limit, depth+1)
 				
-	print('\r%*s, %s queries done, %s found' % (int(limit), base, queries, len(l)))
+	# print('\r%*s, %s queries done, %s found' % (int(limit), base, queries, len(l)))
 		
 if __name__ == "__main__":
 	(base, server) = sys.argv[1:3]
@@ -41,13 +56,14 @@ if __name__ == "__main__":
 	else:
 		limit = 32*2+len('ip6.arpa.')
 
-	print ('base %s server %s limit %s' % (base, server, limit))
+	arpa = reverse_ipv6(base)
 
-	if base.endswith('ip6.arpa'):
-		base = base + '.'
+	print ('base %s arpa %s server %s limit %s' % (base, arpa, server, limit))
 
-	if not base.endswith('ip6.arpa.'):
-		print ('please pass an ip6.arpa name')
-		sys.exit(1)
+	drilldown(arpa, server, limit)
 
-	has_ipv6_records = drilldown(base, server, limit)
+	if len(l) == MAX_FOUND:
+		print("Active IPv6s found!")
+		with open("result.txt", 'a') as fw:
+			fw.writelines(f"{base} ---- {arpa}\n")
+			fw.close()
