@@ -22,7 +22,7 @@ def reverse_ipv6(ip):
 
 def tryquery(q, server):
 	try:
-		return query.udp(q, server, timeout=2)
+		return query.udp(q, server, timeout=3)
 	except exception.Timeout:
 		return None
 
