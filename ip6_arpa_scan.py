@@ -1,3 +1,4 @@
+import re
 from dns import message, query, exception
 import sys
 
@@ -23,7 +24,7 @@ def tryquery(q, server):
 	try:
 		return query.udp(q, server, timeout=2)
 	except exception.Timeout:
-		pass
+		return None
 
 def drilldown(base, server, limit, depth=0):
 	assert base.endswith('ip6.arpa.')
@@ -47,12 +48,13 @@ def drilldown(base, server, limit, depth=0):
 			for c in '0123456789abcdef': 
 				drilldown(c+'.'+base, server, limit, depth+1)
 				
-	# print('\r%*s, %s queries done, %s found' % (int(limit), base, queries, len(l)))
+	print('\r%*s, %s queries done, %s found' % (int(limit), base, queries, len(l)))
 		
 if __name__ == "__main__":
 	(base, server) = sys.argv[1:3]
 	if len(sys.argv) == 4:
-		limit = int(sys.argv[3])//4*2+len('ip6.arpa.')
+		prefix = int(sys.argv[3])
+		limit = int(128-prefix)//4*2+len('ip6.arpa.')
 	else:
 		limit = 32*2+len('ip6.arpa.')
 
@@ -63,7 +65,7 @@ if __name__ == "__main__":
 	drilldown(arpa, server, limit)
 
 	if len(l) == MAX_FOUND:
-		print("Active IPv6s found!")
+		print("Active IPv6 found!")
 		with open("result.txt", 'a') as fw:
 			fw.writelines(f"{base} ---- {arpa}\n")
 			fw.close()
