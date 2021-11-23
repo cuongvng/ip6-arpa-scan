@@ -8,7 +8,7 @@ DNS_SERVER = "8.8.8.8"
 COUNTRIES = glob("./data/*.csv")
 
 def main():
-	for c in COUNTRIES[:5]:
+	for c in COUNTRIES:
 		print(c)
 
 		df = pd.read_csv(c)
