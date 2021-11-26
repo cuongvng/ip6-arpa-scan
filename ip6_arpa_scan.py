@@ -56,6 +56,7 @@ if __name__ == "__main__":
 		prefix = int(sys.argv[3])
 		limit = int(128-prefix)//4*2+len('ip6.arpa.')
 	else:
+		prefix = 0
 		limit = 32*2+len('ip6.arpa.')
 
 	arpa = reverse_ipv6(base)
@@ -66,6 +67,6 @@ if __name__ == "__main__":
 
 	if len(l) == MAX_FOUND:
 		print("Active IPv6 found!")
-		with open("result.txt", 'a') as fw:
-			fw.writelines(f"{base} ---- {arpa}\n")
+		with open("result.csv", 'a') as fw:
+			fw.writelines(f"{base}, {arpa}, {prefix}, {queries}\n")
 			fw.close()

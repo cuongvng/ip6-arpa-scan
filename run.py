@@ -15,7 +15,7 @@ def main():
 		df = df[df["Status"] == "Assigned"]
 		df = df[["Range start", "Prefix"]]
 		
-		with open("result.txt", 'a') as fw:
+		with open("result.csv", 'a') as fw:
 			fw.write(f'\n{c}\n')
 			fw.close()
 
